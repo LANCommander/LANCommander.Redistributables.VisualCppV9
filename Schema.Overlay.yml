@@ -1,0 +1,36 @@
+# The entire option schema for Visual C++ v9 Redistributable (2008), written by hand.
+#
+# A runtime installer has no configuration file, so ConfigPaths is empty and there
+# is nothing generated to curate. The single entry below declares a Type, which is
+# what makes Merge-SchemaOverlay materialise it as an option in its own right
+# rather than reporting it as stale curation.
+#
+# There is no CommandTemplate and no GuestPlatforms. Those belong to compatibility
+# shims that wrap a game's launch command; this package installs a system runtime
+# and then gets out of the way.
+#
+# Default is quoted. OptionDefinition.Default is typed object and
+# GetDefaultAsString() calls ToString(), so an unquoted scalar reaches the install
+# scripts as whatever .NET stringifies it to.
+#
+# Keep this option identical across the Visual C++ family. An administrator who
+# learns it once should not have to relearn it per version.
+
+Options:
+  Architecture:
+    Type: choice
+    DisplayName: Architecture
+    Description: >
+      Which runtime to install. The default, Match the game executable, reads the
+      game's PE header and installs only the runtime it actually needs. There is
+      one case it gets wrong: a .NET AnyCPU executable reports as 32-bit even
+      though it runs 64-bit, so set those games to Both. Both is also the right
+      answer whenever you are unsure -- 64-bit Windows still needs the x86 runtime
+      because most games of this era are 32-bit, and installing both is never
+      wrong, only occasionally more than necessary.
+    Default: 'auto'
+    Choices:
+      - { Value: 'both', DisplayName: 'Both (x86 and x64)' }
+      - { Value: 'auto', DisplayName: 'Match the game executable' }
+      - { Value: 'x86', DisplayName: '32-bit only (x86)' }
+      - { Value: 'x64', DisplayName: '64-bit only (x64)' }

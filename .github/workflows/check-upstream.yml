@@ -1,0 +1,34 @@
+name: Check Upstream
+
+# Watches the upstream project for a new version. When one appears, the option
+# schema is regenerated from the new config and a pull request is opened.
+# Merging that pull request publishes the release.
+
+on:
+  schedule:
+    # Offset from the hour so every redistributable in the org does not hit
+    # upstream at the same moment.
+    - cron: '47 6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild the schema even when the version is unchanged'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    uses: LANCommander/LANCommander.Redistributables/.github/workflows/check-upstream.yml@main
+    with:
+      force: ${{ inputs.force == true }}
+      # Windows, not the default ubuntu-latest. source.ps1 -CheckOnly unpacks the
+      # installer with the vendor's own /x: switch and reads ProductVersion out of
+      # vc_red.msi through WindowsInstaller COM. Both are Windows-only. Same reason
+      # as build.yml, though not quite the reason the sibling repositories give --
+      # see source.ps1.
+      runs_on: windows-latest
+    secrets: inherit

@@ -1,0 +1,16 @@
+Options:
+  Architecture:
+    Type: choice
+    DisplayName: Architecture
+    Description: |
+      Which runtime to install. The default, Match the game executable, reads the game's PE header and installs only the runtime it actually needs. There is one case it gets wrong: a .NET AnyCPU executable reports as 32-bit even though it runs 64-bit, so set those games to Both. Both is also the right answer whenever you are unsure -- 64-bit Windows still needs the x86 runtime because most games of this era are 32-bit, and installing both is never wrong, only occasionally more than necessary.
+    Default: auto
+    Choices:
+    - Value: both
+      DisplayName: Both (x86 and x64)
+    - Value: auto
+      DisplayName: Match the game executable
+    - Value: x86
+      DisplayName: 32-bit only (x86)
+    - Value: x64
+      DisplayName: 64-bit only (x64)

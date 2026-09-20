@@ -1,0 +1,152 @@
+# Identity ---------------------------------------------------------------------
+#
+# Id and every GUID under Scripts are generated ONCE and must never change.
+#
+# RedistributableImporter matches an incoming record with
+#   r.Id == record.Id || r.Name == record.Name
+# so a regenerated GUID makes every published release import as a brand new
+# redistributable instead of updating the existing one. Servers would accumulate a
+# duplicate per release, each with its own per-game option values.
+#
+# Generate four fresh GUIDs per repository:
+#   1..5 | ForEach-Object { [guid]::NewGuid().ToString() }
+# Never copy them from a sibling VC++ repository. Two redistributables sharing an
+# Id would overwrite each other on import.
+
+Id: 43dac08d-5b97-47ce-b7fa-381ef7bab181
+Name: Visual C++ v9 Redistributable (2008)
+
+# Name carries the years because that is what an administrator searching for a
+# missing dependency will type, and what Programs and Features shows. Keep the
+# repository name short, and set RepositoryName whenever the two differ -- it is
+# what release asset filenames are built from, and Name is used verbatim without
+# it, spaces and parentheses included.
+RepositoryName: VisualCppV9
+
+Description: >
+  The Microsoft Visual C++ 2008 runtime libraries, at the final SP1 security-update
+  build. Install this when a game fails to start complaining that MSVCR90.dll or
+  MSVCP90.dll is missing, or that its side-by-side configuration is incorrect. The
+  2008 toolchain covers a very large share of the LAN-era back catalogue, and none
+  of it is present on a clean modern Windows install.
+
+Notes: >
+  Microsoft Visual C++ Redistributable is (c) Microsoft Corporation. The installers
+  are redistributed under the Distributable Code grant in the Visual Studio 2008
+  license terms. As with 2010, and unlike 2012 and 2013, Microsoft publishes no
+  REDIST list for 2008 naming the installers -- for 2008 that list exists only as
+  Redist.txt inside an installed copy of Visual Studio 2008. They are carried
+  unmodified and under their upstream filenames. Read LICENSES/NOTICE.md before
+  relying on this package: it states what the grant rests on, that the evidence is
+  thinner here than for the later versions, and the standalone EULA clause that
+  sits against it.
+
+# The four-part product version of the Windows Installer package the self-extractor
+# carries. Carried verbatim; only the git tag is sanitised.
+#
+# This is the one place 2008 breaks the pattern the rest of this family follows, and
+# it is not cosmetic. Every sibling reads its version from the PE resource of the
+# downloaded installer. Do that here and you get 9.0.30729.5677 -- the file version
+# of the self-extracting shell, which Microsoft stopped restamping. The payload
+# inside it is 9.0.30729.6161, which is what the MSI declares, what the machine
+# records once installed, and what every external index of this package calls it.
+# source.ps1 therefore extracts and reads vc_red.msi instead. See the comment there.
+#
+# 9.0.30729.6161 is SP1 plus the MFC Security Update (KB2538243 / MS11-025), the
+# final Microsoft build of the 2008 runtime. Visual Studio 2008 left extended
+# support on 2018-04-10 and nothing further will ship.
+LastKnownVersion: "9.0.30729.6161"
+
+# Payload ----------------------------------------------------------------------
+Source:
+  Mode: download
+
+  # Bespoke. None of Resolve-UpstreamVersion's resolvers fit: there is no release
+  # feed and no reliable version string on any page to regex out. See source.ps1.
+  Resolver: custom
+
+  Url: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+
+  # The download links for this version.
+  #
+  # For v14 these are permalinks that always serve the latest build. 2008 is long
+  # out of support and pinned to a fixed build, so the scheduled upstream check runs
+  # daily and always reports no change -- that is correct, not broken. It stays in
+  # place in case Microsoft reissues a security update.
+  #
+  # As with 2010 and 2012 there is no aka.ms permalink for these; they are raw
+  # download.microsoft.com GUID paths, which spares us the locale-suffix trap the
+  # 2013 links carry but means the URL cannot self-heal if Microsoft reorganises the
+  # CDN. source.ps1 guards that case: it fails when the downloaded file will not
+  # extract or carries no readable MSI, rather than packaging an HTML error page
+  # saved under a .exe name.
+  #
+  # Both architectures sit under the SAME download-folder GUID, as they do for 2010.
+  # That reads like a copy/paste error and is not one -- it is the layout of the
+  # Microsoft Download Center entry for KB2538243, and the two URLs serve distinct
+  # installers (4,483,040 bytes x86, 5,211,080 bytes x64).
+  #
+  # No ARM and no ARM64. Microsoft never built either for 2008; Windows on ARM
+  # postdates it by years. An ia64 installer does exist -- 2008 is the last version
+  # whose EULA still names Itanium in its title -- and is deliberately left out: no
+  # LANCommander client is Itanium.
+  #
+  # These keys are the whole per-version delta of this file. Adding a third
+  # architecture here is enough -- source.ps1 iterates whatever is listed, and the
+  # install scripts key off the Architecture option rather than this list.
+  Downloads:
+    x86: https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x86.exe
+    x64: https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x64.exe
+
+  # Which installer's payload stamps the package. Microsoft ships both
+  # architectures at the same version; source.ps1 warns if they ever diverge.
+  VersionFrom: x64
+
+  # There is deliberately no RuntimesSubkey here, where every sibling has one.
+  #
+  # The registry shape this family detects against is NOT stable across versions,
+  # and 2008 predates it entirely:
+  #
+  #   2015-2022 (v14)  Microsoft\VisualStudio\14.0\VC\Runtimes\{x86,x64}
+  #   2013             Microsoft\VisualStudio\12.0\VC\Runtimes\{x86,x64}
+  #   2012             Microsoft\VisualStudio\11.0\VC\Runtimes\{x86,x64}
+  #   2010             Microsoft\VisualStudio\10.0\VC\VCRedist\{x86,x64}
+  #   2008             nothing -- no VC key is created at all
+  #
+  # Verified on a machine carrying 9.0.30729.6161 for both architectures:
+  # HKLM\SOFTWARE\Microsoft\VisualStudio\9.0\VC and its WOW6432Node counterpart are
+  # both absent. Microsoft's own guidance for 9.0 is to query the MSI product code,
+  # and those differ per locale as well as per servicing build, so they are unusable
+  # as a fixed list. DetectInstall reads the Windows uninstall registry instead --
+  # see Scripts/DetectInstall.ps1, which is where the detail lives.
+
+# Configuration ----------------------------------------------------------------
+#
+# A runtime installer has no configuration file. The one option this package
+# exposes -- which architecture to install -- is not upstream's setting at all, it
+# is ours, so there is nothing for a parser to read. Schema.Overlay.yml authors it
+# outright instead.
+ConfigPaths: []
+
+# Scripts ----------------------------------------------------------------------
+#
+# Platforms is set on every client-side script. The Visual C++ runtime is a Windows
+# component and an unset Platforms means "runs everywhere", which would let these
+# run on a Linux client and fail. Package is deliberately left unset: it runs on the
+# server, which may well be Linux.
+Scripts:
+  DetectInstall:
+    Id: ded29f3b-6301-4512-b5f9-9f2d3df0d9a8
+    Platforms: Windows
+    Description: Reads the installed runtime version out of the uninstall registry for each selected architecture.
+  Install:
+    Id: f80ac688-b40d-4ad2-ae66-70ba8ed31115
+    Platforms: Windows
+    Description: Runs the Microsoft installer silently for each selected architecture.
+  Uninstall:
+    Id: 7422353d-bc00-4d30-98f0-ea27066ac87c
+    Platforms: Windows
+    Description: Deliberately does nothing; the runtime is shared machine-wide.
+  Package:
+    Id: 468da1a7-72d7-4330-ab9b-23bb69f60b72
+    Description: Server-side updater that tracks this repository's releases.
